@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="card shadow-sm mb-4 border-0 rounded-4">
+    <div class="card-body p-4">
+        <h5 class="card-title fw-bold mb-3">Ваша статистика</h5>
+        <canvas id="moodChart" height="100"></canvas>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Дата</th>
+                        <th>Настроение</th>
+                        <th>Показатели</th>
+                        <th>Заметка</th>
+                        <th class="text-end pe-4">Действие</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mood in moods %}
+                    <tr>
+                        <td class="ps-4 text-nowrap"><small class="text-muted">{{ mood.date }}</small></td>
+                        <td><span class="fs-4">{{ emojis[mood.level] }}</span></td>
+                        <td>
+                            <div class="small text-muted text-nowrap">
+                                🔋 {{ mood.energy }} | 🌪️ {{ mood.stress }} | 💤 {{ mood.sleep }}
+                            </div>
+                        </td>
+                        <td class="text-break">{{ mood.note or '—' }}</td>
+                        <td class="text-end pe-4">
+                            <a href="/delete/{{ mood.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Точно удалить?')">Удалить</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-5">Записей пока нет. Пройдите опрос на главной!</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const labels = [
+        {% for mood in moods[::-1] %} "{{ mood.date.split(' ')[0] }}", {% endfor %}
+    ];
+    const moodData = [
+        {% for mood in moods[::-1] %} {{ mood.level }}, {% endfor %}
+    ];
+
+    if (moodData.length > 0) {
+        const ctx = document.getElementById('moodChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Общее настроение (1-5)',
+                    data: moodData,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#0d6efd',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { min: 0, max: 5.5, ticks: { stepSize: 1 } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    } else {
+        document.getElementById('moodChart').outerHTML = '<p class="text-muted text-center py-4">Добавьте данные, чтобы увидеть график.</p>';
+    }
+</script>
+{% endblock %}
